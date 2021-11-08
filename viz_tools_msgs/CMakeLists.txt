@@ -24,8 +24,7 @@ find_package(builtin_interfaces REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 
 rosidl_generate_interfaces(${PROJECT_NAME}
-  "srv/VisualizeArray.srv"
-  "msg/Visualize.msg"
+  "srv/ManipulateDynamicMarker.srv"
   DEPENDENCIES
     builtin_interfaces
     geometry_msgs

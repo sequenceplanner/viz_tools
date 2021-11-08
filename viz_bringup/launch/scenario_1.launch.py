@@ -66,16 +66,6 @@ def generate_launch_description():
         emulate_tty=True
     )
 
-    viz_active_node = Node(
-        package="viz_active",
-        executable="viz_active",
-        namespace="",
-        output="screen",
-        parameters=[parameters],
-        remappings=[("/tf", "tf"), ("/tf_static", "tf_static")],
-        emulate_tty=True
-    )
-
     rviz_node = Node(
         package="rviz2",
         executable="rviz2",
@@ -92,7 +82,6 @@ def generate_launch_description():
         tf_sms_node,
         viz_static_node,
         viz_interactive_node,
-        viz_active_node,
         rviz_node
     ]
 

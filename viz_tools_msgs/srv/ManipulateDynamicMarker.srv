@@ -1,0 +1,44 @@
+# Request
+
+# "update" to add or update a marker to the dynamic scene
+# "remove" to remove a marker from the dynamic scene
+string command
+
+# The name of the frame that will be added to the scene
+# This is also the name of the marker, so that it can 
+# later be removed if necessary.
+string child_id
+
+# The name of an existing frame in which the "child_id"
+# frame will be placed. 
+string parent_id
+
+# A transformation between 'parent_id' and 'child_id'.
+geometry_msgs/Transform transformation
+
+# Give the mesh a color.
+std_msgs/ColorRGBA color
+
+# Scale the mesh if necessary.
+geometry_msgs/Vector3 scale
+
+# Instead of using a mesh, a primitive 
+# can be generated instead.
+bool use_primitive
+
+# Define which type of primitive mesh to visualize.
+# Works only if 'use_primitive' is set to true.
+# 1: cube
+# 2: sphere
+# 3: cylinder
+int32 primitive_type
+
+# Provide the absolute path of the mesh to be
+# visualizes as a marker. Works only if 'use_primitive'
+# is set to false.
+string absolute_mesh_path
+
+---
+
+# Reply
+bool success

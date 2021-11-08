@@ -78,7 +78,7 @@ class StaticVisualization(Node):
             MarkerArray, "static_markers", 10
         )
 
-        self.individual_markers = [[x, TransformStamped()] for x in self.static_items]
+        self.individual_markers = [x for x in self.static_items]
 
         self.color = ColorRGBA()
 
@@ -103,7 +103,7 @@ class StaticVisualization(Node):
         for x in self.individual_markers:
             id = id + 1
             indiv_marker = Marker()
-            indiv_marker.header.frame_id = x[0]["child_frame"]
+            indiv_marker.header.frame_id = x["child_frame"]
             indiv_marker.header.stamp = Time()
             indiv_marker.ns = ""
             indiv_marker.id = id
@@ -116,16 +116,16 @@ class StaticVisualization(Node):
             indiv_marker.pose.orientation.y = 0.0
             indiv_marker.pose.orientation.z = 0.0
             indiv_marker.pose.orientation.w = 1.0
-            indiv_marker.scale.x = x[0]["visualization"]["scale_x"]
-            indiv_marker.scale.y = x[0]["visualization"]["scale_y"]
-            indiv_marker.scale.z = x[0]["visualization"]["scale_z"]
-            indiv_marker.color.a = x[0]["visualization"]["color_a"]
-            indiv_marker.color.r = x[0]["visualization"]["color_r"]
-            indiv_marker.color.g = x[0]["visualization"]["color_g"]
-            indiv_marker.color.b = x[0]["visualization"]["color_b"]
+            indiv_marker.scale.x = x["visualization"]["scale_x"]
+            indiv_marker.scale.y = x["visualization"]["scale_y"]
+            indiv_marker.scale.z = x["visualization"]["scale_z"]
+            indiv_marker.color.a = x["visualization"]["color_a"]
+            indiv_marker.color.r = x["visualization"]["color_r"]
+            indiv_marker.color.g = x["visualization"]["color_g"]
+            indiv_marker.color.b = x["visualization"]["color_b"]
             indiv_marker.mesh_resource = "file://" + os.path.join(
                 self.parameters["meshes_path"],
-                x[0]["visualization"]["mesh"],
+                x["visualization"]["mesh"],
             )
             markers.append(indiv_marker)
             msg.markers = markers
