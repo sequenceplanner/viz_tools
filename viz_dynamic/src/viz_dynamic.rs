@@ -32,7 +32,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let ctx = r2r::Context::create()?;
     let mut node = r2r::Node::create(ctx, "dynamic_visualization", "")?;
 
-    let clock = r2r::Clock::create(r2r::ClockType::RosTime)?;
+    // let clock = r2r::Clock::create(r2r::ClockType::RosTime)?;
 
     let timer = node.create_wall_timer(std::time::Duration::from_millis(50))?;
     let marker_publisher = node.create_publisher::<r2r::visualization_msgs::msg::MarkerArray>("dynamic_markers")?;
@@ -46,7 +46,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let markers_clone_2 = markers.clone();
 
     tokio::task::spawn(async move {
-        match marker_publisher_callback(marker_publisher, markers_clone_1, clock, timer).await {
+        match marker_publisher_callback(marker_publisher, markers_clone_1, timer).await {
             Ok(()) => println!("done."),
             Err(e) => println!("error: {}", e),
         };
@@ -116,12 +116,24 @@ async fn cube_handler_server(
                                             "dynamic_visualization",
                                             "Updated marker: {}", request.message.child_id
                                         );
+                                        request
+                                            .respond(ManipulateDynamicMarker::Response {
+                                                success: true
+                                            })
+                                            .expect("Could not send service response.");
+                                        continue;
                                     },
                                     false => {
                                         r2r::log_error!(
                                             "dynamic_visualization",
                                             "Failed to update marker: {}", request.message.child_id
                                         );
+                                        request
+                                            .respond(ManipulateDynamicMarker::Response {
+                                                success: false
+                                            })
+                                            .expect("Could not send service response.");
+                                        continue;
                                     }
                                 },
                                 None => match add_marker(&request.message, &mut marker_datas) {
@@ -129,12 +141,24 @@ async fn cube_handler_server(
                                         r2r::log_info!(
                                         "dynamic_visualization",
                                         "Added marker: {}", request.message.child_id);
+                                        request
+                                            .respond(ManipulateDynamicMarker::Response {
+                                                success: true
+                                            })
+                                            .expect("Could not send service response.");
+                                        continue;
                                     },
                                     false => {
                                         r2r::log_error!(
                                             "dynamic_visualization",
                                             "Failed to add marker: {}", request.message.child_id
                                         );
+                                        request
+                                            .respond(ManipulateDynamicMarker::Response {
+                                                success: false
+                                            })
+                                            .expect("Could not send service response.");
+                                        continue;
                                     }
                                 }
                             }
@@ -144,6 +168,12 @@ async fn cube_handler_server(
                                 "dynamic_visualization",
                                 "SMS falied to update a frame, look at the logs from SMS."
                             );
+                            request
+                                .respond(ManipulateDynamicMarker::Response {
+                                    success: false
+                                })
+                                .expect("Could not send service response.");
+                            continue;
                         }
                     };
                 },
@@ -156,14 +186,33 @@ async fn cube_handler_server(
                                         r2r::log_info!(
                                         "dynamic_visualization",
                                         "Removed marker: {}", request.message.child_id);
+                                        request
+                                            .respond(ManipulateDynamicMarker::Response {
+                                                success: true
+                                            })
+                                            .expect("Could not send service response.");
+                                        continue;
                                     },
-                                    false => ()
+                                    false => {
+                                        request
+                                            .respond(ManipulateDynamicMarker::Response {
+                                                success: false
+                                            })
+                                            .expect("Could not send service response.");
+                                        continue;
+                                    }
                                 },
                                 None => {
                                     r2r::log_warn!(
                                         "dynamic_visualization",
                                         "Can't remove nonexisting marker: {}", request.message.child_id
                                     );
+                                    request
+                                        .respond(ManipulateDynamicMarker::Response {
+                                            success: false
+                                        })
+                                        .expect("Could not send service response.");
+                                    continue;
                                 }
                             }
                         },
@@ -172,6 +221,12 @@ async fn cube_handler_server(
                                 "dynamic_visualization",
                                 "SMS falied to remove a frame, look at the logs from SMS."
                             );
+                            request
+                                .respond(ManipulateDynamicMarker::Response {
+                                    success: false
+                                })
+                                .expect("Could not send service response.");
+                            continue;
                         }
                     }
                 },
@@ -180,6 +235,11 @@ async fn cube_handler_server(
                         "dynamic_visualization",
                         "Unknown Command: {}", request.message.command.as_str()
                     );
+                    request
+                        .respond(ManipulateDynamicMarker::Response {
+                            success: false
+                        })
+                        .expect("Could not send service response.");
                     continue;
                 }
             }
@@ -309,11 +369,11 @@ fn make_marker_data(message: &r2r::viz_tools_msgs::srv::ManipulateDynamicMarker:
 async fn marker_publisher_callback(
     publisher: r2r::Publisher<MarkerArray>,
     marker_datas: Arc<Mutex<Vec<MarkerData>>>,
-    mut clock: r2r::Clock,
+    // mut clock: r2r::Clock,
     mut timer: r2r::Timer
 ) -> Result<(), Box<dyn std::error::Error>> {
 
-    let now = clock.get_now().expect("Could not get ROS time.");
+    // let now = clock.get_now().expect("Could not get ROS time.");
 
     loop {
         let mut markers: Vec<Marker> = vec!();
@@ -322,7 +382,7 @@ async fn marker_publisher_callback(
             id = id + 1;
             let indiv_marker = Marker {
                 header: Header { 
-                    stamp: r2r::Clock::to_builtin_time(&now),
+                    stamp: r2r::builtin_interfaces::msg::Time { sec: 0, nanosec: 0},
                     frame_id: marker.child_id.to_string() 
                 },
                 ns: "".to_string(),

@@ -1,4 +1,6 @@
 use r2r::geometry_msgs::msg::Transform;
+use r2r::geometry_msgs::msg::Vector3;
+use r2r::std_msgs::msg::ColorRGBA;
 use r2r::viz_tools_msgs::srv::ManipulateDynamicMarker;
 
 
@@ -33,9 +35,64 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         transformation: Transform::default(),
         use_primitive: true,
         primitive_type: 1,
+        scale: Vector3 {
+            x: 0.1,
+            y: 0.1,
+            z: 0.1
+        },
+        color: ColorRGBA {
+            r: 1.0,
+            g: 0.0,
+            b: 0.0,
+            a: 1.0
+        },
         ..ManipulateDynamicMarker::Request::default()
     };
     messages.push(message_1);
+
+    let message_2 = ManipulateDynamicMarker::Request {
+        command: "update".to_string(),
+        child_id: "cyl_1".to_string(),
+        parent_id: "output".to_string(),
+        transformation: Transform::default(),
+        use_primitive: true,
+        primitive_type: 2,
+        scale: Vector3 {
+            x: 0.1,
+            y: 0.1,
+            z: 0.1
+        },
+        color: ColorRGBA {
+            r: 0.0,
+            g: 1.0,
+            b: 0.0,
+            a: 1.0
+        },
+        ..ManipulateDynamicMarker::Request::default()
+    };
+    messages.push(message_2);
+
+    let message_3 = ManipulateDynamicMarker::Request {
+        command: "remove".to_string(),
+        child_id: "cube_1".to_string(),
+        parent_id: "input".to_string(),
+        transformation: Transform::default(),
+        use_primitive: true,
+        primitive_type: 1,
+        scale: Vector3 {
+            x: 0.1,
+            y: 0.1,
+            z: 0.1
+        },
+        color: ColorRGBA {
+            r: 1.0,
+            g: 0.0,
+            b: 0.0,
+            a: 1.0
+        },
+        ..ManipulateDynamicMarker::Request::default()
+    };
+    messages.push(message_3);
 
     for message in messages {
         sms_test(
@@ -53,6 +110,8 @@ async fn sms_test(
     client: &r2r::Client<ManipulateDynamicMarker::Service>,
     message: ManipulateDynamicMarker::Request,
 ) -> Result<(), Box<dyn std::error::Error>> {
+
+    r2r::log_info!("viz_dynamic_client", "Will now send Request to Dynamic Visualization.");
 
     let response = client
         .request(&message)
