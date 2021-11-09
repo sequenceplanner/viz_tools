@@ -24,7 +24,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         "Dinamic Visualization Test Node started."
     );
 
-    std::thread::sleep(std::time::Duration::from_millis(5000));
+    std::thread::sleep(std::time::Duration::from_millis(1000));
 
     let mut messages = vec![];
 
@@ -93,6 +93,34 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         ..ManipulateDynamicMarker::Request::default()
     };
     messages.push(message_3);
+
+    let message_4 = ManipulateDynamicMarker::Request {
+        command: "update".to_string(),
+        child_id: "cube_6".to_string(),
+        parent_id: "input".to_string(),
+        transformation: Transform::default(),
+        use_primitive: true,
+        primitive_type: 1,
+        scale: Vector3 {
+            x: 0.1,
+            y: 0.1,
+            z: 0.1
+        },
+        color: ColorRGBA {
+            r: 0.0,
+            g: 0.0,
+            b: 1.0,
+            a: 1.0
+        },
+        ..ManipulateDynamicMarker::Request::default()
+    };
+    messages.push(message_4);
+
+    let message_5 = ManipulateDynamicMarker::Request {
+        command: "clear".to_string(),
+        ..ManipulateDynamicMarker::Request::default()
+    };
+    messages.push(message_5);
 
     for message in messages {
         sms_test(
