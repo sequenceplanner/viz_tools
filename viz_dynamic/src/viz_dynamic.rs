@@ -491,6 +491,10 @@ async fn marker_publisher_callback(
                     b: marker.color.b,
                     a: marker.color.a,
                 },
+                mesh_resource: match marker.use_primitive {
+                    true => "".to_string(),
+                    false => format!("file://{}", marker.absolute_mesh_path)
+                },
                 ..Marker::default()
             };
             markers.push(indiv_marker)
