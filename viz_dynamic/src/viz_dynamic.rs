@@ -13,6 +13,7 @@ use r2r::tf_tools_msgs::srv::ManipulateScene;
 use r2r::visualization_msgs::msg::Marker;
 use r2r::visualization_msgs::msg::MarkerArray;
 use r2r::viz_tools_msgs::srv::ManipulateDynamicMarker;
+use std::path::Path;
 use std::sync::{Arc, Mutex};
 
 #[derive(Clone)]
@@ -106,15 +107,99 @@ async fn dynamic_visualization_server(
 
     loop {
         match requests.next().await {
-            Some(request) => match request.message.command.as_str() {
-                "update" => {
-                    match manipulate_scene(&request.message, &sms_client).await {
+            Some(request) => {
+                match check_message(&request.message) {
+                    true => (),
+                    false => {
+                        request
+                            .respond(ManipulateDynamicMarker::Response { success: false })
+                            .expect("Could not send service response.");
+                        continue;
+                    }
+                }
+                match request.message.command.as_str() {
+                    "update" => {
+                        match manipulate_scene(&request.message, &sms_client).await {
+                            true => match get_marker_data(&request.message.child_id, &marker_datas)
+                            {
+                                Some(md) => {
+                                    match update_marker(&request.message, &marker_datas, &md) {
+                                        true => {
+                                            r2r::log_info!(
+                                                "dynamic_visualization",
+                                                "Updated marker: {}",
+                                                request.message.child_id
+                                            );
+                                            request
+                                                .respond(ManipulateDynamicMarker::Response {
+                                                    success: true,
+                                                })
+                                                .expect("Could not send service response.");
+                                            continue;
+                                        }
+                                        false => {
+                                            r2r::log_error!(
+                                                "dynamic_visualization",
+                                                "Failed to update marker: {}",
+                                                request.message.child_id
+                                            );
+                                            request
+                                                .respond(ManipulateDynamicMarker::Response {
+                                                    success: false,
+                                                })
+                                                .expect("Could not send service response.");
+                                            continue;
+                                        }
+                                    }
+                                }
+                                None => match add_marker(&request.message, &mut marker_datas) {
+                                    true => {
+                                        r2r::log_info!(
+                                            "dynamic_visualization",
+                                            "Added marker: {}",
+                                            request.message.child_id
+                                        );
+                                        request
+                                            .respond(ManipulateDynamicMarker::Response {
+                                                success: true,
+                                            })
+                                            .expect("Could not send service response.");
+                                        continue;
+                                    }
+                                    false => {
+                                        r2r::log_error!(
+                                            "dynamic_visualization",
+                                            "Failed to add marker: {}",
+                                            request.message.child_id
+                                        );
+                                        request
+                                            .respond(ManipulateDynamicMarker::Response {
+                                                success: false,
+                                            })
+                                            .expect("Could not send service response.");
+                                        continue;
+                                    }
+                                },
+                            },
+                            false => {
+                                r2r::log_error!(
+                                    "dynamic_visualization",
+                                    "SMS falied to update a frame, look at the logs from SMS."
+                                );
+                                request
+                                    .respond(ManipulateDynamicMarker::Response { success: false })
+                                    .expect("Could not send service response.");
+                                continue;
+                            }
+                        };
+                    }
+                    "remove" => match manipulate_scene(&request.message, &sms_client).await {
                         true => match get_marker_data(&request.message.child_id, &marker_datas) {
-                            Some(md) => match update_marker(&request.message, &marker_datas, &md) {
+                            Some(_) => match remove_marker(&request.message, &marker_datas) {
                                 true => {
                                     r2r::log_info!(
                                         "dynamic_visualization",
-                                        "Updated marker: {}",
+                                        "Removed marker: {}",
                                         request.message.child_id
                                     );
                                     request
@@ -125,11 +210,6 @@ async fn dynamic_visualization_server(
                                     continue;
                                 }
                                 false => {
-                                    r2r::log_error!(
-                                        "dynamic_visualization",
-                                        "Failed to update marker: {}",
-                                        request.message.child_id
-                                    );
                                     request
                                         .respond(ManipulateDynamicMarker::Response {
                                             success: false,
@@ -138,56 +218,67 @@ async fn dynamic_visualization_server(
                                     continue;
                                 }
                             },
-                            None => match add_marker(&request.message, &mut marker_datas) {
-                                true => {
-                                    r2r::log_info!(
-                                        "dynamic_visualization",
-                                        "Added marker: {}",
-                                        request.message.child_id
-                                    );
-                                    request
-                                        .respond(ManipulateDynamicMarker::Response {
-                                            success: true,
-                                        })
-                                        .expect("Could not send service response.");
-                                    continue;
-                                }
-                                false => {
-                                    r2r::log_error!(
-                                        "dynamic_visualization",
-                                        "Failed to add marker: {}",
-                                        request.message.child_id
-                                    );
-                                    request
-                                        .respond(ManipulateDynamicMarker::Response {
-                                            success: false,
-                                        })
-                                        .expect("Could not send service response.");
-                                    continue;
-                                }
-                            },
+                            None => {
+                                r2r::log_warn!(
+                                    "dynamic_visualization",
+                                    "Can't remove nonexisting marker: {}",
+                                    request.message.child_id
+                                );
+                                request
+                                    .respond(ManipulateDynamicMarker::Response { success: false })
+                                    .expect("Could not send service response.");
+                                continue;
+                            }
                         },
                         false => {
                             r2r::log_error!(
                                 "dynamic_visualization",
-                                "SMS falied to update a frame, look at the logs from SMS."
+                                "SMS falied to remove a frame, look at the logs from SMS."
                             );
                             request
                                 .respond(ManipulateDynamicMarker::Response { success: false })
                                 .expect("Could not send service response.");
                             continue;
                         }
-                    };
-                }
-                "remove" => match manipulate_scene(&request.message, &sms_client).await {
-                    true => match get_marker_data(&request.message.child_id, &marker_datas) {
-                        Some(_) => match remove_marker(&request.message, &marker_datas) {
+                    },
+                    "clear" => {
+                        let mut overall_success: Vec<bool> = vec![];
+                        for name in get_all_marker_names(&marker_datas) {
+                            let message = ManipulateDynamicMarker::Request {
+                                command: "remove".to_string(),
+                                child_id: name.to_string(),
+                                ..ManipulateDynamicMarker::Request::default()
+                            };
+                            match manipulate_scene(&message, &sms_client).await {
+                                true => match remove_marker(&message, &marker_datas) {
+                                    true => {
+                                        r2r::log_info!(
+                                            "dynamic_visualization",
+                                            "Removed marker: {}",
+                                            message.child_id
+                                        );
+                                        overall_success.push(true);
+                                    }
+                                    false => {
+                                        r2r::log_warn!(
+                                            "dynamic_visualization",
+                                            "Failed to remove marker: {}",
+                                            message.child_id
+                                        );
+                                        overall_success.push(false);
+                                    }
+                                },
+                                false => {
+                                    r2r::log_error!(
+                                        "dynamic_visualization",
+                                        "SMS falied to remove a frame, look at the logs from SMS."
+                                    );
+                                    overall_success.push(false);
+                                }
+                            }
+                        }
+                        match overall_success.iter().all(|x| *x) {
                             true => {
-                                r2r::log_info!(
-                                    "dynamic_visualization",
-                                    "Removed marker: {}",
-                                    request.message.child_id
-                                );
                                 request
                                     .respond(ManipulateDynamicMarker::Response { success: true })
                                     .expect("Could not send service response.");
@@ -199,93 +290,21 @@ async fn dynamic_visualization_server(
                                     .expect("Could not send service response.");
                                 continue;
                             }
-                        },
-                        None => {
-                            r2r::log_warn!(
-                                "dynamic_visualization",
-                                "Can't remove nonexisting marker: {}",
-                                request.message.child_id
-                            );
-                            request
-                                .respond(ManipulateDynamicMarker::Response { success: false })
-                                .expect("Could not send service response.");
-                            continue;
                         }
-                    },
-                    false => {
+                    }
+                    _ => {
                         r2r::log_error!(
                             "dynamic_visualization",
-                            "SMS falied to remove a frame, look at the logs from SMS."
+                            "Unknown Command: {}",
+                            request.message.command.as_str()
                         );
                         request
                             .respond(ManipulateDynamicMarker::Response { success: false })
                             .expect("Could not send service response.");
                         continue;
                     }
-                },
-                "clear" => {
-                    let mut overall_success: Vec<bool> = vec!();
-                    for name in get_all_marker_names(&marker_datas) {
-                        let message = ManipulateDynamicMarker::Request {
-                            command: "remove".to_string(),
-                            child_id: name.to_string(),
-                            ..ManipulateDynamicMarker::Request::default()
-                        };
-                        match manipulate_scene(&message, &sms_client).await {
-                            true => match remove_marker(&message, &marker_datas) {
-                                true => {
-                                    r2r::log_info!(
-                                        "dynamic_visualization",
-                                        "Removed marker: {}",
-                                        message.child_id
-                                    );
-                                    overall_success.push(true);
-                                },
-                                false => {
-                                    r2r::log_warn!(
-                                        "dynamic_visualization",
-                                        "Failed to remove marker: {}",
-                                        message.child_id
-                                    );
-                                    overall_success.push(false);
-                                }
-                            }
-                            false => {
-                                r2r::log_error!(
-                                    "dynamic_visualization",
-                                    "SMS falied to remove a frame, look at the logs from SMS."
-                                );
-                                overall_success.push(false);
-                            }
-                        }
-                    }
-                    match overall_success.iter().all(|x| *x) {
-                        true => {
-                            request
-                                .respond(ManipulateDynamicMarker::Response { success: true })
-                                .expect("Could not send service response.");
-                            continue;
-                        },
-                        false => {
-                            request
-                                .respond(ManipulateDynamicMarker::Response { success: false })
-                                .expect("Could not send service response.");
-                            continue;
-                        }
-                    }
-                },
-                _ => {
-                    r2r::log_error!(
-                        "dynamic_visualization",
-                        "Unknown Command: {}",
-                        request.message.command.as_str()
-                    );
-                    request
-                        .respond(ManipulateDynamicMarker::Response { success: false })
-                        .expect("Could not send service response.");
-                    continue;
                 }
-            },
+            }
             None => (),
         }
     }
@@ -303,9 +322,7 @@ fn get_marker_data(
         .map(|x| x.clone())
 }
 
-fn get_all_marker_names(
-    marker_datas: &Arc<Mutex<Vec<MarkerData>>>,
-) -> Vec<String> {
+fn get_all_marker_names(marker_datas: &Arc<Mutex<Vec<MarkerData>>>) -> Vec<String> {
     marker_datas
         .lock()
         .unwrap()
@@ -328,6 +345,34 @@ fn add_marker(
             false
         }
     }
+}
+
+fn check_message(message: &r2r::viz_tools_msgs::srv::ManipulateDynamicMarker::Request) -> bool {
+    if message.child_id == "" {
+        r2r::log_warn!("dynamic_visualization", "Child frame ID can't be empty.",);
+        return false;
+    }
+
+    if message.parent_id == "" {
+        r2r::log_warn!("dynamic_visualization", "Parent frame ID can't be empty.",);
+        return false;
+    }
+
+    if message.child_id == message.parent_id {
+        r2r::log_warn!(
+            "dynamic_visualization",
+            "Parent frame ID can't be equal to Child frame ID.",
+        );
+        return false;
+    }
+    if !message.use_primitive {
+        if !Path::new(message.absolute_mesh_path.as_str()).exists() {
+            r2r::log_warn!("dynamic_visualization", "Invalid mesh path.",);
+            return false;
+        }
+    }
+
+    true
 }
 
 fn update_marker(
@@ -493,7 +538,7 @@ async fn marker_publisher_callback(
                 },
                 mesh_resource: match marker.use_primitive {
                     true => "".to_string(),
-                    false => format!("file://{}", marker.absolute_mesh_path)
+                    false => format!("file://{}", marker.absolute_mesh_path),
                 },
                 ..Marker::default()
             };
