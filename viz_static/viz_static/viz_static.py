@@ -66,8 +66,11 @@ class StaticVisualization(Node):
             json.load(open(x)) for x in self.included_things_paths
         ]
 
+        # self.static_items = []
+        # for item in self.static_items_jsons:
+        #     if "viausliation" in item
         self.static_items = [
-            x for x in self.static_items_jsons if x["visualization"]["show_mesh"]
+            x for x in self.static_items_jsons if "visualization" in x if x["visualization"]["show_mesh"]
         ]
 
         self.get_logger().info(

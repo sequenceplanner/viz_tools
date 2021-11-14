@@ -72,7 +72,7 @@ class InteractiveVisualization(Node):
         self.interactive_items = [
             x
             for x in self.interactive_items_jsons
-            if (x["visualization"]["interactive"] and x["visualization"]["show_mesh"])
+            if "visualization" in x if (x["visualization"]["interactive"] and x["visualization"]["show_mesh"])
         ]
 
         self.get_logger().info(
