@@ -91,10 +91,10 @@ class StaticVisualization(Node):
         )
 
         # wait for the broadcaster to add the frames
-        while not self.client.wait_for_service(timeout_sec=1.0):
-            self.get_logger().info(
-                "tf broadcast service not available, waiting again..."
-            )
+        # while not self.client.wait_for_service(timeout_sec=1.0):
+        #     self.get_logger().info(
+        #         "tf broadcast service not available, waiting again..."
+        #     )
 
         # wait a bit for the tf to put these frames in the buffer
         time.sleep(2)
@@ -106,7 +106,7 @@ class StaticVisualization(Node):
         for x in self.individual_markers:
             id = id + 1
             indiv_marker = Marker()
-            indiv_marker.header.frame_id = x["child_frame"]
+            indiv_marker.header.frame_id = x["child_frame_id"]
             indiv_marker.header.stamp = Time()
             indiv_marker.ns = ""
             indiv_marker.id = id
