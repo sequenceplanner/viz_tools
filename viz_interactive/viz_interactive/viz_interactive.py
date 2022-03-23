@@ -169,7 +169,7 @@ class InteractiveVisualization(Node):
 
     def create_interactive_marker(self, item, fixed, interaction_mode, show_6dof=False):
         int_marker = InteractiveMarker()
-        int_marker.header.frame_id = item["parent_frame"]
+        int_marker.header.frame_id = item["parent_frame_id"]
         int_marker.pose.position.x = item["transform"]["translation"]["x"]
         int_marker.pose.position.y = item["transform"]["translation"]["y"]
         int_marker.pose.position.z = item["transform"]["translation"]["z"]
@@ -178,8 +178,8 @@ class InteractiveVisualization(Node):
         int_marker.pose.orientation.z = item["transform"]["rotation"]["z"]
         int_marker.pose.orientation.w = item["transform"]["rotation"]["w"]
         int_marker.scale = item["visualization"]["marker_scale"]
-        int_marker.name = item["child_frame"]
-        int_marker.description = item["child_frame"]
+        int_marker.name = item["child_frame_id"]
+        int_marker.description = item["child_frame_id"]
 
         self.create_marker_control(int_marker, item)
         int_marker.controls[0].interaction_mode = interaction_mode

@@ -13,7 +13,7 @@ include(r2r_cargo.cmake)
 r2r_cargo(std_msgs               # just to test that it works
           rcl                    # we need the c ros2 api
           rcl_action             # as of r2r 0.1.0, we also need the action api
-          tf_tools_msgs
+          scene_manipulation_msgs
           viz_tools_msgs
           visualization_msgs
           rmw_fastrtps_cpp       # (needed to build with RMW_IMPLEMENTATION=rmw_fastrtps_cpp)

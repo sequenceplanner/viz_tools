@@ -7,11 +7,11 @@ string command
 # The name of the frame that will be added to the scene
 # This is also the name of the marker, so that it can 
 # later be removed if necessary.
-string child_id
+string child_frame_id
 
 # The name of an existing frame in which the "child_id"
 # frame will be placed. 
-string parent_id
+string parent_frame_id
 
 # A transformation between 'parent_id' and 'child_id'.
 geometry_msgs/Transform transformation

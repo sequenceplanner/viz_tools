@@ -9,7 +9,7 @@ use r2r::geometry_msgs::msg::Transform;
 use r2r::geometry_msgs::msg::Vector3;
 use r2r::std_msgs::msg::ColorRGBA;
 use r2r::std_msgs::msg::Header;
-use r2r::tf_tools_msgs::srv::ManipulateScene;
+use r2r::scene_manipulation_msgs::srv::ManipulateScene;
 use r2r::visualization_msgs::msg::Marker;
 use r2r::visualization_msgs::msg::MarkerArray;
 use r2r::viz_tools_msgs::srv::ManipulateDynamicMarker;
@@ -18,8 +18,8 @@ use std::sync::{Arc, Mutex};
 
 #[derive(Clone)]
 pub struct MarkerData {
-    pub child_id: String,
-    pub parent_id: String,
+    pub child_frame_id: String,
+    pub parent_frame_id: String,
     pub tf: Transform,
     pub color: ColorRGBA,
     pub scale: Vector3,
@@ -120,7 +120,7 @@ async fn dynamic_visualization_server(
                 match request.message.command.as_str() {
                     "update" => {
                         match manipulate_scene(&request.message, &sms_client).await {
-                            true => match get_marker_data(&request.message.child_id, &marker_datas)
+                            true => match get_marker_data(&request.message.child_frame_id, &marker_datas)
                             {
                                 Some(md) => {
                                     match update_marker(&request.message, &marker_datas, &md) {
@@ -128,7 +128,7 @@ async fn dynamic_visualization_server(
                                             r2r::log_info!(
                                                 "dynamic_visualization",
                                                 "Updated marker: {}",
-                                                request.message.child_id
+                                                request.message.child_frame_id
                                             );
                                             request
                                                 .respond(ManipulateDynamicMarker::Response {
@@ -141,7 +141,7 @@ async fn dynamic_visualization_server(
                                             r2r::log_error!(
                                                 "dynamic_visualization",
                                                 "Failed to update marker: {}",
-                                                request.message.child_id
+                                                request.message.child_frame_id
                                             );
                                             request
                                                 .respond(ManipulateDynamicMarker::Response {
@@ -157,7 +157,7 @@ async fn dynamic_visualization_server(
                                         r2r::log_info!(
                                             "dynamic_visualization",
                                             "Added marker: {}",
-                                            request.message.child_id
+                                            request.message.child_frame_id
                                         );
                                         request
                                             .respond(ManipulateDynamicMarker::Response {
@@ -170,7 +170,7 @@ async fn dynamic_visualization_server(
                                         r2r::log_error!(
                                             "dynamic_visualization",
                                             "Failed to add marker: {}",
-                                            request.message.child_id
+                                            request.message.child_frame_id
                                         );
                                         request
                                             .respond(ManipulateDynamicMarker::Response {
@@ -194,13 +194,13 @@ async fn dynamic_visualization_server(
                         };
                     }
                     "remove" => match manipulate_scene(&request.message, &sms_client).await {
-                        true => match get_marker_data(&request.message.child_id, &marker_datas) {
+                        true => match get_marker_data(&request.message.child_frame_id, &marker_datas) {
                             Some(_) => match remove_marker(&request.message, &marker_datas) {
                                 true => {
                                     r2r::log_info!(
                                         "dynamic_visualization",
                                         "Removed marker: {}",
-                                        request.message.child_id
+                                        request.message.child_frame_id
                                     );
                                     request
                                         .respond(ManipulateDynamicMarker::Response {
@@ -222,7 +222,7 @@ async fn dynamic_visualization_server(
                                 r2r::log_warn!(
                                     "dynamic_visualization",
                                     "Can't remove nonexisting marker: {}",
-                                    request.message.child_id
+                                    request.message.child_frame_id
                                 );
                                 request
                                     .respond(ManipulateDynamicMarker::Response { success: false })
@@ -246,7 +246,7 @@ async fn dynamic_visualization_server(
                         for name in get_all_marker_names(&marker_datas) {
                             let message = ManipulateDynamicMarker::Request {
                                 command: "remove".to_string(),
-                                child_id: name.to_string(),
+                                child_frame_id: name.to_string(),
                                 ..ManipulateDynamicMarker::Request::default()
                             };
                             match manipulate_scene(&message, &sms_client).await {
@@ -255,7 +255,7 @@ async fn dynamic_visualization_server(
                                         r2r::log_info!(
                                             "dynamic_visualization",
                                             "Removed marker: {}",
-                                            message.child_id
+                                            message.child_frame_id
                                         );
                                         overall_success.push(true);
                                     }
@@ -263,7 +263,7 @@ async fn dynamic_visualization_server(
                                         r2r::log_warn!(
                                             "dynamic_visualization",
                                             "Failed to remove marker: {}",
-                                            message.child_id
+                                            message.child_frame_id
                                         );
                                         overall_success.push(false);
                                     }
@@ -311,14 +311,14 @@ async fn dynamic_visualization_server(
 }
 
 fn get_marker_data(
-    child_id: &str,
+    child_frame_id: &str,
     marker_datas: &Arc<Mutex<Vec<MarkerData>>>,
 ) -> Option<MarkerData> {
     marker_datas
         .lock()
         .unwrap()
         .iter()
-        .find(|x| x.child_id == child_id)
+        .find(|x| x.child_frame_id == child_frame_id)
         .map(|x| x.clone())
 }
 
@@ -327,7 +327,7 @@ fn get_all_marker_names(marker_datas: &Arc<Mutex<Vec<MarkerData>>>) -> Vec<Strin
         .lock()
         .unwrap()
         .iter()
-        .map(|x| x.child_id.to_string())
+        .map(|x| x.child_frame_id.to_string())
         .collect()
 }
 
@@ -348,17 +348,17 @@ fn add_marker(
 }
 
 fn check_message(message: &r2r::viz_tools_msgs::srv::ManipulateDynamicMarker::Request) -> bool {
-    if message.child_id == "" {
+    if message.child_frame_id == "" {
         r2r::log_warn!("dynamic_visualization", "Child frame ID can't be empty.",);
         return false;
     }
 
-    if message.parent_id == "" {
+    if message.parent_frame_id == "" {
         r2r::log_warn!("dynamic_visualization", "Parent frame ID can't be empty.",);
         return false;
     }
 
-    if message.child_id == message.parent_id {
+    if message.child_frame_id == message.parent_frame_id {
         r2r::log_warn!(
             "dynamic_visualization",
             "Parent frame ID can't be equal to Child frame ID.",
@@ -380,12 +380,12 @@ fn update_marker(
     marker_datas: &Arc<Mutex<Vec<MarkerData>>>,
     new_marker: &MarkerData,
 ) -> bool {
-    let old_marker_index = match get_marker_data(&message.child_id, marker_datas) {
+    let old_marker_index = match get_marker_data(&message.child_frame_id, marker_datas) {
         Some(_) => match marker_datas.lock() {
             Ok(y) => {
                 match y
                     .iter()
-                    .position(|z| *z.child_id == message.child_id)
+                    .position(|z| *z.child_frame_id == message.child_frame_id)
                     .map(|m| m as i32)
                 {
                     Some(n) => n,
@@ -420,12 +420,12 @@ fn remove_marker(
     message: &r2r::viz_tools_msgs::srv::ManipulateDynamicMarker::Request,
     marker_datas: &Arc<Mutex<Vec<MarkerData>>>,
 ) -> bool {
-    let marker_index = match get_marker_data(&message.child_id, marker_datas) {
+    let marker_index = match get_marker_data(&message.child_frame_id, marker_datas) {
         Some(_) => match marker_datas.lock() {
             Ok(y) => {
                 match y
                     .iter()
-                    .position(|z| *z.child_id == message.child_id)
+                    .position(|z| *z.child_frame_id == message.child_frame_id)
                     .map(|m| m as i32)
                 {
                     Some(n) => n,
@@ -459,8 +459,8 @@ fn make_marker_data(
     message: &r2r::viz_tools_msgs::srv::ManipulateDynamicMarker::Request,
 ) -> MarkerData {
     MarkerData {
-        child_id: message.child_id.to_string(),
-        parent_id: message.parent_id.to_string(),
+        child_frame_id: message.child_frame_id.to_string(),
+        parent_frame_id: message.parent_frame_id.to_string(),
         tf: message.transformation.clone(),
         color: message.color.clone(),
         scale: message.scale.clone(),
@@ -486,7 +486,7 @@ async fn marker_publisher_callback(
             let indiv_marker = Marker {
                 header: Header {
                     stamp: r2r::builtin_interfaces::msg::Time { sec: 0, nanosec: 0 },
-                    frame_id: marker.child_id.to_string(),
+                    frame_id: marker.child_frame_id.to_string(),
                 },
                 ns: "".to_string(),
                 id,
@@ -569,8 +569,8 @@ async fn manipulate_scene(
 
     let sms_request = ManipulateScene::Request {
         command: message.command.to_string(),
-        child_frame: message.child_id.to_string(),
-        parent_frame: message.parent_id.to_string(),
+        child_frame_id: message.child_frame_id.to_string(),
+        parent_frame_id: message.parent_frame_id.to_string(),
         transform: message.transformation.clone(),
         same_position_in_world: false,
     };

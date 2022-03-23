@@ -30,8 +30,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let message_1 = ManipulateDynamicMarker::Request {
         command: "update".to_string(),
-        child_id: "cube_1".to_string(),
-        parent_id: "input".to_string(),
+        child_frame_id: "cube_1".to_string(),
+        parent_frame_id: "input".to_string(),
         transformation: Transform::default(),
         use_primitive: true,
         primitive_type: 1,
@@ -52,8 +52,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let message_2 = ManipulateDynamicMarker::Request {
         command: "update".to_string(),
-        child_id: "cyl_1".to_string(),
-        parent_id: "output".to_string(),
+        child_frame_id: "cyl_1".to_string(),
+        parent_frame_id: "output".to_string(),
         transformation: Transform::default(),
         use_primitive: true,
         primitive_type: 2,
@@ -74,8 +74,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let message_3 = ManipulateDynamicMarker::Request {
         command: "remove".to_string(),
-        child_id: "cube_1".to_string(),
-        parent_id: "input".to_string(),
+        child_frame_id: "cube_1".to_string(),
+        parent_frame_id: "input".to_string(),
         transformation: Transform::default(),
         use_primitive: true,
         primitive_type: 1,
@@ -96,8 +96,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let message_4 = ManipulateDynamicMarker::Request {
         command: "update".to_string(),
-        child_id: "cube_6".to_string(),
-        parent_id: "input".to_string(),
+        child_frame_id: "cube_6".to_string(),
+        parent_frame_id: "input".to_string(),
         transformation: Transform::default(),
         use_primitive: true,
         primitive_type: 1,
