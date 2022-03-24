@@ -10,7 +10,7 @@ from visualization_msgs.msg import InteractiveMarker
 from visualization_msgs.msg import InteractiveMarkerControl
 from visualization_msgs.msg import InteractiveMarkerFeedback
 from interactive_markers import InteractiveMarkerServer
-from tf_tools_msgs.srv import ManipulateBroadcast
+from scene_manipulation_msgs.srv import ManipulateBroadcast
 
 
 class InteractiveVisualization(Node):

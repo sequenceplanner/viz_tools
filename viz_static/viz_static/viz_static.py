@@ -9,7 +9,7 @@ from builtin_interfaces.msg import Time
 from geometry_msgs.msg import TransformStamped
 from visualization_msgs.msg import Marker
 from visualization_msgs.msg import MarkerArray
-from tf_tools_msgs.srv import ManipulateBroadcast
+from scene_manipulation_msgs.srv import ManipulateBroadcast
 from std_msgs.msg import ColorRGBA
 
 

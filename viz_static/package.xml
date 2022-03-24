@@ -15,7 +15,7 @@
 
   <exec_depend>rclpy</exec_depend>
   <exec_depend>std_msgs</exec_depend>
-  <exec_depend>tf_tools_msgs</exec_depend>
+  <exec_depend>scene_manipulation_msgs</exec_depend>
   <exec_depend>tf_bringup</exec_depend>
   <exec_depend>tf_broadcast</exec_depend>
   <exec_depend>tf_scene</exec_depend>
