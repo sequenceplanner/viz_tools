@@ -10,7 +10,7 @@ from visualization_msgs.msg import InteractiveMarker
 from visualization_msgs.msg import InteractiveMarkerControl
 from visualization_msgs.msg import InteractiveMarkerFeedback
 from interactive_markers import InteractiveMarkerServer
-from scene_manipulation_msgs.srv import ManipulateBroadcast
+# from scene_manipulation_msgs.srv import ManipulateBroadcast
 
 
 class InteractiveVisualization(Node):
@@ -22,7 +22,7 @@ class InteractiveVisualization(Node):
             self, "interactive_markers"
         )
 
-        self.client = self.create_client(ManipulateBroadcast, "manipulate_broadcast")
+        # self.client = self.create_client(ManipulateBroadcast, "manipulate_broadcast")
 
         self.parameter_keys = ["scenario_path", "meshes_path"]
 
@@ -88,13 +88,13 @@ class InteractiveVisualization(Node):
             )
 
         # wait for the broadcaster to add the frames
-        while not self.client.wait_for_service(timeout_sec=1.0):
-            self.get_logger().info(
-                "tf broadcast service not available, waiting again..."
-            )
+        # while not self.client.wait_for_service(timeout_sec=1.0):
+        #     self.get_logger().info(
+        #         "tf broadcast service not available, waiting again..."
+        #     )
 
         # wait a bit for the tf to put these frames in the buffer
-        time.sleep(2)
+        # time.sleep(2)
 
         self.interactive_markers_server.applyChanges()
 
